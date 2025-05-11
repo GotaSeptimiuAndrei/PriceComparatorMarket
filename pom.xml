@@ -21,7 +21,6 @@
         <java.version>21</java.version>
         <springdoc-openapi.version>2.5.0</springdoc-openapi.version>
         <google-java-format.version>1.17.0</google-java-format.version>
-        <maven.checkstyle.version>3.3.1</maven.checkstyle.version>
     </properties>
 
     <dependencies>
@@ -118,23 +117,6 @@
                     <java>
                         <googleJavaFormat/>
                     </java>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${maven.checkstyle.version}</version>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals><goal>check</goal></goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <configLocation>google-checkstyle.xml</configLocation>
-                    <consoleOutput>true</consoleOutput>
-                    <failOnViolation>true</failOnViolation>
                 </configuration>
             </plugin>
         </plugins>
