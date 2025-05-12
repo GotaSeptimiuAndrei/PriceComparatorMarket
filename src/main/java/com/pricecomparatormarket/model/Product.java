@@ -14,11 +14,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Product {
-    @Id
-    @Column(name = "product_id", length = 20)
-    private String productId;
+  @Id
+  @Column(name = "product_id", length = 20)
+  private String productId;
 
-    private String productName;
-    private String productCategory;
-    private String brand;
+  private String productName;
+  private String productCategory;
+  private String brand;
 }
