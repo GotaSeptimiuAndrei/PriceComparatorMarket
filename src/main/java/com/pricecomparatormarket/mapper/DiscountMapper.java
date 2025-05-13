@@ -9,20 +9,20 @@ import org.mapstruct.Mapping;
 // Converts (Discount + runtime price numbers) -> DTO.
 @Mapper(componentModel = "spring")
 public interface DiscountMapper {
-
   @Mapping(target = "productId", source = "discount.product.productId")
   @Mapping(target = "productName", source = "discount.product.productName")
   @Mapping(target = "storeName", source = "discount.store.name")
   @Mapping(target = "percentageOfDiscount", source = "discount.percentageOfDiscount")
-  @Mapping(target = "currency", expression = "java(discount.getProduct().getCurrency())")
   @Mapping(target = "fromDate", source = "discount.fromDate")
   @Mapping(target = "toDate", source = "discount.toDate")
-  BestDiscountDto toDto(Discount discount, BigDecimal originalPrice, BigDecimal discountedPrice);
+  BestDiscountDto toDto(
+      Discount discount, BigDecimal originalPrice, BigDecimal discountedPrice, String currency);
 
   default BestDiscountDto fromTuple(Object[] tuple) {
     Discount d = (Discount) tuple[0];
-    BigDecimal original = (BigDecimal) tuple[1];
+    BigDecimal orig = (BigDecimal) tuple[1];
     BigDecimal after = (BigDecimal) tuple[2];
-    return toDto(d, original, after);
+    String currency = (String) tuple[3];
+    return toDto(d, orig, after, currency);
   }
 }
