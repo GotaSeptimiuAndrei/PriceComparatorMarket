@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.pricecomparatormarket.dto.response.BestDiscountDto;
+import com.pricecomparatormarket.dto.response.NewDiscountDto;
 import com.pricecomparatormarket.exception.NotFoundException;
 import com.pricecomparatormarket.mapper.DiscountMapper;
 import com.pricecomparatormarket.model.PriceSnapshot;
@@ -12,6 +13,7 @@ import com.pricecomparatormarket.repository.DiscountRepository;
 import com.pricecomparatormarket.repository.PriceSnapshotRepository;
 import com.pricecomparatormarket.service.DiscountService;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -42,10 +44,7 @@ class DiscountServiceTest {
 
     Object[] tuple =
         new Object[] {
-          "ignored‑discount",
-          BigDecimal.valueOf(11.50),
-          BigDecimal.valueOf(9.20),
-          "RON"
+          "ignored‑discount", BigDecimal.valueOf(11.50), BigDecimal.valueOf(9.20), "RON"
         };
     List<Object[]> tuples = List.<Object[]>of(tuple);
     BestDiscountDto dto =
@@ -102,5 +101,31 @@ class DiscountServiceTest {
     assertThrows(NotFoundException.class, () -> service.getBestDiscounts(10, null));
 
     verifyNoInteractions(repo, mapper);
+  }
+
+  @Test
+  void whenSnapshotExists_returnsMappedDtos() {
+    LocalDate latestDate = LocalDate.of(2025, 5, 14);
+    PriceSnapshot ps = mock(PriceSnapshot.class);
+    when(ps.getId()).thenReturn(new PriceSnapshotId(1L, "PX", latestDate));
+    when(snapshotRepo.findTopByOrderByIdSnapshotDateDesc()).thenReturn(Optional.of(ps));
+
+    Object[] tuple = new Object[] {"d‑obj", BigDecimal.valueOf(10), BigDecimal.valueOf(8), "RON"};
+    List<Object[]> tuples = List.<Object[]>of(tuple);
+
+    when(repo.findNewDiscounts(eq(latestDate), any(Instant.class), any(Pageable.class)))
+        .thenReturn(tuples);
+
+    NewDiscountDto dto = mock(NewDiscountDto.class);
+    when(mapper.fromNewTuple(tuple)).thenReturn(dto);
+
+    List<NewDiscountDto> result = service.getNewDiscounts(24, 10);
+
+    assertEquals(1, result.size());
+    assertSame(dto, result.getFirst());
+
+    ArgumentCaptor<Pageable> pCap = ArgumentCaptor.forClass(Pageable.class);
+    verify(repo).findNewDiscounts(eq(latestDate), any(Instant.class), pCap.capture());
+    assertEquals(10, pCap.getValue().getPageSize());
   }
 }
