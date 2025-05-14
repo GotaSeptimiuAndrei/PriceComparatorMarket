@@ -1,6 +1,7 @@
 package com.pricecomparatormarket.repository;
 
 import com.pricecomparatormarket.model.Discount;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
@@ -24,4 +25,21 @@ public interface DiscountRepository extends JpaRepository<Discount, Long> {
       ORDER BY d.percentageOfDiscount DESC
       """)
   List<Object[]> findBestActiveDiscounts(@Param("today") LocalDate today, Pageable pageable);
+
+  @Query(
+      """
+    SELECT  d, ps.price,
+            (ps.price * (1 - d.percentageOfDiscount / 100)),
+            ps.currency
+    FROM    Discount d
+    JOIN    PriceSnapshot ps
+           ON ps.store    = d.store
+          AND ps.product  = d.product
+          AND ps.id.snapshotDate = :today
+    WHERE   d.createdAt >= :cutoff
+      AND   :today BETWEEN d.fromDate AND d.toDate
+    ORDER BY d.createdAt DESC
+    """)
+  List<Object[]> findNewDiscounts(
+      @Param("today") LocalDate today, @Param("cutoff") Instant cutoff, Pageable pageable);
 }

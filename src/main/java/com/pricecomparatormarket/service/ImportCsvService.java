@@ -25,6 +25,7 @@ public class ImportCsvService {
   private final PriceSnapshotRepository priceSnapshotRepository;
   private final DiscountRepository discountRepository;
 
+  // TODO: if no date is provided, default to today
   /** Imports all price and discount CSVs for the given date into the database. */
   public void importForDate(LocalDate date) throws IOException {
     List<CsvFileLocator.CsvMeta> files = csvFileLocator.findForDate(date);
