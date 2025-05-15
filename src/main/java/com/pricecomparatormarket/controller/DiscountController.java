@@ -17,14 +17,14 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DiscountController {
 
-  private final DiscountService service;
+  private final DiscountService discountService;
 
   @GetMapping("/best")
   public ResponseEntity<List<BestDiscountDto>> bestDiscounts(
       @RequestParam(defaultValue = "20") @Min(1) @Max(20) int limit,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
           LocalDate date) {
-    return ResponseEntity.ok(service.getBestDiscounts(limit, date));
+    return ResponseEntity.ok(discountService.getBestDiscounts(limit, date));
   }
 
   @GetMapping("/new")
@@ -32,6 +32,6 @@ public class DiscountController {
       @RequestParam(defaultValue = "24") @Min(1) @Max(168) int hours,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit) {
 
-    return ResponseEntity.ok(service.getNewDiscounts(hours, limit));
+    return ResponseEntity.ok(discountService.getNewDiscounts(hours, limit));
   }
 }

@@ -21,8 +21,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DiscountService {
 
-  private final DiscountRepository repo;
-  private final DiscountMapper mapper;
+  private final DiscountRepository discountRepo;
   private final PriceSnapshotRepository snapshotRepo;
 
   public List<BestDiscountDto> getBestDiscounts(int limit, LocalDate date) {
@@ -35,8 +34,9 @@ public class DiscountService {
                 .orElseThrow(() -> new NotFoundException("No snapshots available"));
 
     Pageable page = PageRequest.of(0, limit);
-    return repo.findBestActiveDiscounts(snapshotDate, page).stream()
-        .map(mapper::fromTuple)
+
+    return discountRepo.findBestActiveDiscounts(snapshotDate, page).stream()
+        .map(DiscountMapper::toBestDto)
         .toList();
   }
 
@@ -52,8 +52,8 @@ public class DiscountService {
     Instant cutoff = Instant.now().minus(hours, ChronoUnit.HOURS);
     Pageable page = PageRequest.of(0, limit);
 
-    return repo.findNewDiscounts(snapshotDate, cutoff, page).stream()
-        .map(mapper::fromNewTuple)
+    return discountRepo.findNewDiscounts(snapshotDate, cutoff, page).stream()
+        .map(DiscountMapper::toNewDto)
         .toList();
   }
 }

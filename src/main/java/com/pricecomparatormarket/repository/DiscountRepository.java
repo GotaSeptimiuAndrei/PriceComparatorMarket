@@ -13,33 +13,37 @@ public interface DiscountRepository extends JpaRepository<Discount, Long> {
 
   @Query(
       """
-      SELECT d, ps.price,
-             (ps.price * (1 - d.percentageOfDiscount / 100)),
-             ps.currency
+      SELECT new com.pricecomparatormarket.repository.DiscountRow(
+                 d,
+                 ps.price,
+                 ps.price * (1 - d.percentageOfDiscount / 100),
+                 ps.currency )
       FROM Discount d
       JOIN PriceSnapshot ps
-        ON ps.store = d.store
+        ON ps.store   = d.store
        AND ps.product = d.product
        AND ps.id.snapshotDate = :today
       WHERE :today BETWEEN d.fromDate AND d.toDate
       ORDER BY d.percentageOfDiscount DESC
       """)
-  List<Object[]> findBestActiveDiscounts(@Param("today") LocalDate today, Pageable pageable);
+  List<DiscountRow> findBestActiveDiscounts(@Param("today") LocalDate today, Pageable pageable);
 
   @Query(
       """
-    SELECT  d, ps.price,
-            (ps.price * (1 - d.percentageOfDiscount / 100)),
-            ps.currency
-    FROM    Discount d
-    JOIN    PriceSnapshot ps
-           ON ps.store    = d.store
-          AND ps.product  = d.product
-          AND ps.id.snapshotDate = :today
-    WHERE   d.createdAt >= :cutoff
-      AND   :today BETWEEN d.fromDate AND d.toDate
-    ORDER BY d.createdAt DESC
-    """)
-  List<Object[]> findNewDiscounts(
+      SELECT new com.pricecomparatormarket.repository.DiscountRow(
+                 d,
+                 ps.price,
+                 ps.price * (1 - d.percentageOfDiscount / 100),
+                 ps.currency )
+      FROM Discount d
+      JOIN PriceSnapshot ps
+        ON ps.store   = d.store
+       AND ps.product = d.product
+       AND ps.id.snapshotDate = :today
+      WHERE d.createdAt >= :cutoff
+        AND :today BETWEEN d.fromDate AND d.toDate
+      ORDER BY d.createdAt DESC
+      """)
+  List<DiscountRow> findNewDiscounts(
       @Param("today") LocalDate today, @Param("cutoff") Instant cutoff, Pageable pageable);
 }
