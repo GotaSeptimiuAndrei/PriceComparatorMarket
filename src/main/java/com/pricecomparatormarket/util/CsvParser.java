@@ -1,5 +1,6 @@
 package com.pricecomparatormarket.util;
 
+import com.pricecomparatormarket.model.Unit;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -30,18 +31,20 @@ public final class CsvParser {
 
     return StreamSupport.stream(recs.spliterator(), false)
         .map(
-            r ->
-                new PriceRow(
-                    r.get("product_id"),
-                    r.get("product_name"),
-                    r.get("product_category"),
-                    r.get("brand"),
-                    new BigDecimal(r.get("package_quantity")),
-                    r.get("package_unit"),
-                    new BigDecimal(r.get("price")),
-                    r.get("currency"),
-                    store,
-                    snapshotDate));
+            r -> {
+              Unit unit = Unit.fromCsv(r.get("package_unit"));
+              return new PriceRow(
+                  r.get("product_id"),
+                  r.get("product_name"),
+                  r.get("product_category"),
+                  r.get("brand"),
+                  new BigDecimal(r.get("package_quantity")),
+                  unit,
+                  new BigDecimal(r.get("price")),
+                  r.get("currency"),
+                  store,
+                  snapshotDate);
+            });
   }
 
   public static Stream<DiscountRow> parseDiscountCsv(Resource csv, String store, LocalDate fileDate)
@@ -68,7 +71,7 @@ public final class CsvParser {
       String category,
       String brand,
       BigDecimal quantity,
-      String unit,
+      Unit unit,
       BigDecimal price,
       String currency,
       String store,

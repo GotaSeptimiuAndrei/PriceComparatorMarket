@@ -1,0 +1,4 @@
+product_id,product_name,product_category,brand,package_quantity,package_unit,price,currency
+P300,napolitana vanilie,dulciuri,Olka,200,g,4.00,RON
+P301,napolitana capsuni,dulciuri,Olka,250,g,5.00,RON
+P302,napolitana cafea,dulciuri,Olka,250,g,4.00,RON

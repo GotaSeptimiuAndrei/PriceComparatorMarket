@@ -28,12 +28,18 @@ public class PriceSnapshot {
   @Column(name = "package_quantity", nullable = false, precision = 10, scale = 3)
   private BigDecimal packageQuantity;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "package_unit", length = 10, nullable = false)
-  private String packageUnit;
+  private Unit packageUnit;
 
   @Column(nullable = false, precision = 10, scale = 2)
   private BigDecimal price;
 
   @Column(length = 3, nullable = false)
   private String currency;
+
+  @Transient
+  public BigDecimal getValuePerBaseUnit() {
+    return packageUnit.valuePerBase(price, packageQuantity);
+  }
 }

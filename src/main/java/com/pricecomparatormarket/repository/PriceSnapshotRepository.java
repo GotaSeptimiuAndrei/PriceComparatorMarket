@@ -2,6 +2,7 @@ package com.pricecomparatormarket.repository;
 
 import com.pricecomparatormarket.model.PriceSnapshot;
 import com.pricecomparatormarket.model.PriceSnapshotId;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,4 +29,16 @@ public interface PriceSnapshotRepository extends JpaRepository<PriceSnapshot, Pr
       @Param("brand") String brand);
 
   Optional<PriceSnapshot> findTopByOrderByIdSnapshotDateDesc();
+
+  @Query(
+      """
+      SELECT ps
+      FROM   PriceSnapshot ps
+      JOIN FETCH ps.product p
+      JOIN FETCH ps.store   s
+      WHERE  p.productCategory = :category
+        AND  ps.id.snapshotDate = :today
+      """)
+  List<PriceSnapshot> findTodayByCategory(
+      @Param("category") String category, @Param("today") LocalDate today);
 }
