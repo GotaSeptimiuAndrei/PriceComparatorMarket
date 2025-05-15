@@ -1,26 +1,27 @@
-package com.pricecomparatormarket.unit;
+ package com.pricecomparatormarket.unit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+ import static org.mockito.Mockito.*;
 
-import com.pricecomparatormarket.model.*;
-import com.pricecomparatormarket.repository.*;
-import com.pricecomparatormarket.service.ImportCsvService;
-import com.pricecomparatormarket.util.CsvFileLocator;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.io.ByteArrayResource;
+ import com.pricecomparatormarket.model.*;
+ import com.pricecomparatormarket.repository.*;
+ import com.pricecomparatormarket.service.AlertEvaluator;
+ import com.pricecomparatormarket.service.ImportCsvService;
+ import com.pricecomparatormarket.util.CsvFileLocator;
+ import java.io.IOException;
+ import java.math.BigDecimal;
+ import java.time.LocalDate;
+ import java.util.List;
+ import java.util.Optional;
+ import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ import org.mockito.ArgumentCaptor;
+ import org.mockito.junit.jupiter.MockitoExtension;
+ import org.springframework.core.io.ByteArrayResource;
 
-@ExtendWith(MockitoExtension.class)
-class ImportServiceTest {
+ @ExtendWith(MockitoExtension.class)
+ class ImportServiceTest {
 
   CsvFileLocator locator;
   StoreRepository storeRepo;
@@ -28,6 +29,7 @@ class ImportServiceTest {
   PriceSnapshotRepository snapRepo;
   DiscountRepository discountRepo;
   ImportCsvService service;
+  AlertEvaluator evaluator;
 
   @BeforeEach
   void init() {
@@ -36,8 +38,9 @@ class ImportServiceTest {
     productRepo = mock(ProductRepository.class);
     snapRepo = mock(PriceSnapshotRepository.class);
     discountRepo = mock(DiscountRepository.class);
+    evaluator = mock(AlertEvaluator.class);
 
-    service = new ImportCsvService(locator, storeRepo, productRepo, snapRepo, discountRepo);
+    service = new ImportCsvService(locator, storeRepo, productRepo, snapRepo, discountRepo, evaluator);
   }
 
   @Test
@@ -45,7 +48,8 @@ class ImportServiceTest {
     var res =
         new org.springframework.core.io.ByteArrayResource(
             ("""
-                product_id,product_name,product_category,brand,package_quantity,package_unit,price,currency
+
+ product_id,product_name,product_category,brand,package_quantity,package_unit,price,currency
                 P001,Milk,cat,Brand,1,l,5.00,RON
                 """)
                 .getBytes());
@@ -105,4 +109,4 @@ class ImportServiceTest {
     assertEquals(LocalDate.of(2025, 5, 8), saved.getFromDate());
     assertEquals(LocalDate.of(2025, 5, 15), saved.getToDate());
   }
-}
+ }

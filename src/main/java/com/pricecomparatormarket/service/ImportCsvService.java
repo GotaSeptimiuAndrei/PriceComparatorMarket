@@ -24,6 +24,7 @@ public class ImportCsvService {
   private final ProductRepository productRepository;
   private final PriceSnapshotRepository priceSnapshotRepository;
   private final DiscountRepository discountRepository;
+  private final AlertEvaluator alertEvaluator;
 
   // TODO: if no date is provided, default to today
   /** Imports all price and discount CSVs for the given date into the database. */
@@ -57,8 +58,10 @@ public class ImportCsvService {
     if (priceSnapshotRepository.existsById(id)) {
       return;
     }
-    priceSnapshotRepository.save(
-        new PriceSnapshot(id, store, product, r.quantity(), r.unit(), r.price(), r.currency()));
+    PriceSnapshot snap =
+        priceSnapshotRepository.save(
+            new PriceSnapshot(id, store, product, r.quantity(), r.unit(), r.price(), r.currency()));
+    alertEvaluator.evaluate(snap);
   }
 
   private void insertDiscount(Store store, CsvParser.DiscountRow r) {
