@@ -1,6 +1,7 @@
 package com.pricecomparatormarket.service;
 
 import com.pricecomparatormarket.dto.response.PriceHistoryDto;
+import com.pricecomparatormarket.exception.NotFoundException;
 import com.pricecomparatormarket.mapper.PriceHistoryMapper;
 import com.pricecomparatormarket.model.PriceSnapshot;
 import com.pricecomparatormarket.repository.PriceSnapshotRepository;
@@ -22,6 +23,10 @@ public class PriceHistoryService {
 
     List<PriceSnapshot> flat =
         priceSnapshotRepo.findHistoryFlat(productId, storeId, category, brand);
+
+    if (flat.isEmpty()) {
+      throw new NotFoundException("No price history found for productId: " + productId);
+    }
 
     // group by product & store, preserving order
     record Key(String productId, Long storeId) {}
