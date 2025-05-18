@@ -41,4 +41,15 @@ public interface PriceSnapshotRepository extends JpaRepository<PriceSnapshot, Pr
       """)
   List<PriceSnapshot> findTodayByCategory(
       @Param("category") String category, @Param("today") LocalDate today);
+
+  @Query(
+      """
+        SELECT ps
+        FROM   PriceSnapshot ps
+        WHERE  ps.store.id = :storeId
+          AND  ps.product.productId = :productId
+          AND  ps.id.snapshotDate = :date
+        """)
+  Optional<PriceSnapshot> findOneByStoreProductAndDate(
+      Long storeId, String productId, LocalDate date);
 }

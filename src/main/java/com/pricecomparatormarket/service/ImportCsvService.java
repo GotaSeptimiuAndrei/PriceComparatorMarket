@@ -10,7 +10,6 @@ import com.pricecomparatormarket.util.CsvParser;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,22 +25,24 @@ public class ImportCsvService {
   private final DiscountRepository discountRepository;
   private final AlertEvaluator alertEvaluator;
 
-  // TODO: if no date is provided, default to today
   /** Imports all price and discount CSVs for the given date into the database. */
   public void importForDate(LocalDate date) throws IOException {
-    List<CsvFileLocator.CsvMeta> files = csvFileLocator.findForDate(date);
-    for (var meta : files) {
+
+    for (var meta : csvFileLocator.findForDate(date)) {
+
       Store store =
           storeRepository
               .findByName(meta.store())
               .orElseGet(() -> storeRepository.save(new Store(null, meta.store())));
+
       switch (meta.type()) {
         case PRICE ->
             CsvParser.parsePriceCsv(meta.resource(), store.getName(), date)
                 .forEach(r -> upsertPrice(store, r));
+
         case DISCOUNT ->
             CsvParser.parseDiscountCsv(meta.resource(), store.getName(), date)
-                .forEach(r -> insertDiscount(store, r));
+                .forEach(r -> insertDiscount(store, r, date)); // <── pass date
       }
     }
   }
@@ -64,7 +65,8 @@ public class ImportCsvService {
     alertEvaluator.evaluate(snap);
   }
 
-  private void insertDiscount(Store store, CsvParser.DiscountRow r) {
+  private void insertDiscount(Store store, CsvParser.DiscountRow r, LocalDate fileDate) {
+
     productRepository
         .findById(r.productId())
         .ifPresent(
@@ -75,7 +77,11 @@ public class ImportCsvService {
               d.setFromDate(r.fromDate());
               d.setToDate(r.toDate());
               d.setPercentageOfDiscount(r.percentage());
+
               discountRepository.save(d);
+
+              /* evaluate only if fileDate is within the discount interval */
+              alertEvaluator.evaluate(d, fileDate);
             });
   }
 }
