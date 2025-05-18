@@ -4,4 +4,6 @@ import com.pricecomparatormarket.model.PriceAlertTrigger;
 
 public interface NotificationPort {
   void notifyHit(String toEmail, PriceAlertTrigger trigger);
+
+  void sendText(String to, String body);
 }

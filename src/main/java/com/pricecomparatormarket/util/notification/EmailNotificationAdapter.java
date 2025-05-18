@@ -35,4 +35,13 @@ public class EmailNotificationAdapter implements NotificationPort {
       throw new MailDeliveryException("Could not send e-mail", ex);
     }
   }
+
+  @Override
+  public void sendText(String to, String body) {
+    SimpleMailMessage m = new SimpleMailMessage();
+    m.setTo(to);
+    m.setSubject("🛒 Your optimised basket");
+    m.setText(body);
+    mail.send(m);
+  }
 }

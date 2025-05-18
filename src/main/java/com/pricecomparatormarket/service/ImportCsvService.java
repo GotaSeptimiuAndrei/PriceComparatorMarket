@@ -42,7 +42,7 @@ public class ImportCsvService {
 
         case DISCOUNT ->
             CsvParser.parseDiscountCsv(meta.resource(), store.getName(), date)
-                .forEach(r -> insertDiscount(store, r, date)); // <── pass date
+                .forEach(r -> insertDiscount(store, r, date));
       }
     }
   }

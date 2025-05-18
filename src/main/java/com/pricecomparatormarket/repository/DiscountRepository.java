@@ -46,4 +46,14 @@ public interface DiscountRepository extends JpaRepository<Discount, Long> {
       """)
   List<DiscountRow> findNewDiscounts(
       @Param("today") LocalDate today, @Param("cutoff") Instant cutoff, Pageable pageable);
+
+  @Query(
+      """
+    SELECT d
+    FROM   Discount d
+    WHERE  d.product.productId = :productId
+      AND  :today BETWEEN d.fromDate AND d.toDate
+    """)
+  List<Discount> findActiveForProduct(
+      @Param("productId") String productId, @Param("today") LocalDate today);
 }
