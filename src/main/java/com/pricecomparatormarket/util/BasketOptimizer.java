@@ -18,6 +18,11 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * Splits a basket of products across stores to minimize total cost,
+ * then, if more than maxStores, greedily drops the store whose removal
+ * increases the total by the least amount.
+ */
 @Component
 @RequiredArgsConstructor
 public class BasketOptimizer {
@@ -29,7 +34,6 @@ public class BasketOptimizer {
   public List<SuggestedListDto> optimise(
       List<BasketOptimizeRequest.Item> reqItems, int maxStores, LocalDate today) {
 
-    /* ---- Build the cheapest offer per product/store ---- */
     record Offer(Store store, BigDecimal unitPrice) {}
 
     Map<String, List<Offer>> offersPerProduct = new HashMap<>();
@@ -49,16 +53,19 @@ public class BasketOptimizer {
         BigDecimal shelf = ps.getPrice();
         BigDecimal pct = discByStore.getOrDefault(ps.getStore().getId(), BigDecimal.ZERO);
         BigDecimal eff =
-            shelf.multiply(
-                BigDecimal.ONE.subtract(
-                    pct.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)));
+            shelf
+                .multiply(
+                    BigDecimal.ONE.subtract(
+                        pct.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)))
+                .setScale(2, RoundingMode.HALF_UP); // 2-decimal
+
         offers.add(new Offer(ps.getStore(), eff));
       }
       offersPerProduct.put(pid, offers);
     }
 
-    /* ---- Greedy pick cheapest per product ---- */
     Map<Store, List<SuggestedListDto.Item>> bucket = new HashMap<>();
+    Map<String, Offer> chosen = new HashMap<>();
 
     for (var it : reqItems) {
       Product p = productRepo.getReferenceById(it.productId());
@@ -67,7 +74,9 @@ public class BasketOptimizer {
               .min(Comparator.comparing(o -> o.unitPrice))
               .orElseThrow(() -> new NoPriceException("No price for " + it.productId()));
 
-      BigDecimal line = best.unitPrice.multiply(it.quantity());
+      chosen.put(it.productId(), best);
+
+      BigDecimal line = best.unitPrice.multiply(it.quantity()).setScale(2, RoundingMode.HALF_UP);
 
       bucket
           .computeIfAbsent(best.store, __ -> new ArrayList<>())
@@ -76,30 +85,64 @@ public class BasketOptimizer {
                   p.getProductId(), p.getProductName(), it.quantity(), best.unitPrice, line));
     }
 
-    /* ---- Trim to maxStores (drop most-expensive buckets) ---- */
-    List<Map.Entry<Store, List<SuggestedListDto.Item>>> entries =
-        new ArrayList<>(bucket.entrySet());
+    while (bucket.size() > maxStores) {
 
-    entries.sort(
-        Comparator.comparing(
-            e ->
-                e.getValue().stream()
-                    .map(SuggestedListDto.Item::linePrice)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)));
+      Store storeToDrop = null;
+      BigDecimal minPenalty = BigDecimal.valueOf(Long.MAX_VALUE);
 
-    while (entries.size() > maxStores) {
-      entries.removeLast();
+      for (Store candidate : bucket.keySet()) {
+
+        BigDecimal penalty = BigDecimal.ZERO;
+
+        for (SuggestedListDto.Item item : bucket.get(candidate)) {
+          Offer alt =
+              offersPerProduct.get(item.productId()).stream()
+                  .filter(o -> !o.store.equals(candidate))
+                  .min(Comparator.comparing(o -> o.unitPrice))
+                  .orElse(null);
+          if (alt == null) {
+            penalty = null;
+            break;
+          } // cannot drop
+          BigDecimal altLine =
+              alt.unitPrice.multiply(item.quantity()).setScale(2, RoundingMode.HALF_UP);
+          penalty = penalty.add(altLine.subtract(item.linePrice()));
+        }
+        if (penalty != null && penalty.compareTo(minPenalty) < 0) {
+          minPenalty = penalty;
+          storeToDrop = candidate;
+        }
+      }
+
+      List<SuggestedListDto.Item> itemsToMove = bucket.remove(storeToDrop);
+      for (SuggestedListDto.Item item : itemsToMove) {
+
+        Store finalStoreToDrop = storeToDrop;
+        Offer alt =
+            offersPerProduct.get(item.productId()).stream()
+                .filter(o -> !o.store.equals(finalStoreToDrop))
+                .min(Comparator.comparing(o -> o.unitPrice))
+                .orElseThrow();
+
+        BigDecimal newLine =
+            alt.unitPrice.multiply(item.quantity()).setScale(2, RoundingMode.HALF_UP);
+
+        bucket
+            .computeIfAbsent(alt.store, __ -> new ArrayList<>())
+            .add(
+                new SuggestedListDto.Item(
+                    item.productId(), item.productName(), item.quantity(), alt.unitPrice, newLine));
+      }
     }
-
-    /* ---- DTO ---- */
-    return entries.stream()
+    return bucket.entrySet().stream()
         .map(
             e ->
                 new SuggestedListDto(
                     e.getKey().getName(),
                     e.getValue().stream()
                         .map(SuggestedListDto.Item::linePrice)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add),
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .setScale(2, RoundingMode.HALF_UP),
                     e.getValue()))
         .sorted(Comparator.comparing(SuggestedListDto::subTotal))
         .toList();
