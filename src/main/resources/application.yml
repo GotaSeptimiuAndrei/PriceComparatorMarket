@@ -3,9 +3,9 @@ spring:
     name: PriceComparatorMarket
 
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/pricecomparatormarket?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: root
-    password: password
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/pricecomparatormarket?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -20,15 +20,10 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: "gotaseptimiuandrei@gmail.com"
-    password: "qnhotlsglvgjhfok"
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    properties.mail.smtp.auth: true
+    properties.mail.smtp.starttls.enable: true
 
 server:
-  port: 8080
-
+  port: ${SERVER_PORT:8080}
